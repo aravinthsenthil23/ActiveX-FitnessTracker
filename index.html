@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitTrack Pro - Your Ultimate Fitness Companion</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        :root {
+            --bg-dark: #111827;
+            --bg-light: #1F2937;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --primary-accent: #6366F1; /* Indigo */
+            --primary-accent-hover: #4F46E5;
+            --text-light: #E5E7EB;
+            --text-dark: #9CA3AF;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+        }
+
+        .page { display: none; }
+        .page.active { display: block; }
+        .content-section { display: none; }
+        .content-section.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-light); }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+
+        .todo-item.completed span {
+            text-decoration: line-through;
+            color: var(--text-dark);
+        }
+
+        .nav-link.active {
+            background-color: var(--primary-accent);
+            color: white;
+        }
+        
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-primary {
+            background-image: linear-gradient(to right, var(--primary-accent), #818cf8);
+            transition: all 0.3s ease;
+            background-size: 200% auto;
+        }
+        .btn-primary:hover {
+            background-position: right center;
+        }
+
+        .progress-circle { transform: rotate(-90deg); }
+        .progress-circle-bar {
+            stroke-dasharray: 251.2;
+            transition: stroke-dashoffset 1s ease-in-out;
+        }
+
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- App Container -->
+    <div id="app" class="min-h-screen">
+
+        <!-- Login/Signup Page -->
+        <div id="auth-page" class="page active bg-gradient-to-br from-gray-900 to-gray-800">
+            <div class="flex items-center justify-center min-h-screen p-4">
+                <div class="w-full max-w-md p-8 space-y-6 glass-card fade-in">
+                    <div class="text-center">
+                        <i data-lucide="zap" class="w-12 h-12 mx-auto text-indigo-400"></i>
+                        <h2 class="mt-4 text-3xl font-extrabold text-white">Welcome to ActiveX Pro</h2>
+                        <p class="mt-2 text-sm text-gray-400" id="auth-subtitle">Login to continue your journey</p>
+                    </div>
+
+                    <!-- Login Form -->
+                    <form id="login-form" class="mt-8 space-y-6">
+                        <div class="rounded-md space-y-4">
+                            <input id="login-username" name="username" type="text" required class="appearance-none bg-gray-700/50 border border-gray-600 placeholder-gray-400 text-white rounded-lg block w-full px-3 py-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Username">
+                            <div class="relative">
+                                <input id="login-password" name="password" type="password" required class="appearance-none bg-gray-700/50 border border-gray-600 placeholder-gray-400 text-white rounded-lg block w-full px-3 py-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Password">
+                                <span class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer password-toggle">
+                                    <i data-lucide="eye-off" class="h-5 w-5 text-gray-400"></i>
+                                </span>
+                            </div>
+                        </div>
+                        <div>
+                            <button type="submit" class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white btn-primary">
+                                Sign in
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <div class="relative flex py-2 items-center">
+                        <div class="flex-grow border-t border-gray-600"></div>
+                        <span class="flex-shrink mx-4 text-gray-400 text-xs">OR</span>
+                        <div class="flex-grow border-t border-gray-600"></div>
+                    </div>
+
+                    <!-- Google Sign-In Button -->
+                    <div id="g_id_onload"
+                         data-client_id="914192437738-bnf7d6sut68jp1j3vlmehvdpafqhoq0t.apps.googleusercontent.com"
+                         data-callback="handleGoogleSignIn"
+                         data-context="signin"
+                         data-ux_mode="popup"
+                         data-auto_prompt="false">
+                    </div>
+                    <div class="g_id_signin flex justify-center"
+                         data-type="standard"
+                         data-theme="outline"
+                         data-text="sign_in_with"
+                         data-shape="rectangular"
+                         data-logo_alignment="left">
+                    </div>
+
+                    <!-- Signup Form -->
+                    <form id="signup-form" class="mt-8 space-y-4 hidden">
+                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <input name="name" type="text" required class="w-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Full Name">
+                            <input name="username" type="text" required class="w-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Username">
+                            <input name="age" type="number" required class="w-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Age">
+                            <input name="height" type="number" required class="w-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Height (cm)">
+                            <input name="weight" type="number" required class="w-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Weight (kg)">
+                            <input name="goal" type="number" required class="w-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Goal Weight (kg)">
+                        </div>
+                        <textarea name="description" rows="2" class="w-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="A little about your goals..."></textarea>
+                        <div class="relative"><input name="password" type="password" required class="w-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Password"><span class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer password-toggle"><i data-lucide="eye-off" class="h-5 w-5 text-gray-400"></i></span></div>
+                        <div class="relative"><input name="confirmPassword" type="password" required class="w-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Confirm Password"><span class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer password-toggle"><i data-lucide="eye-off" class="h-5 w-5 text-gray-400"></i></span></div>
+                        <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white btn-primary">Create Account</button>
+                    </form>
+
+                    <div class="text-sm text-center pt-4">
+                        <a href="#" id="toggle-auth" class="font-medium text-indigo-400 hover:text-indigo-300">
+                            Don't have an account? Sign up
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main App Page -->
+        <div id="main-app-page" class="page">
+            <div class="flex flex-col h-screen">
+                <!-- Top Navigation -->
+                <nav class="glass-card flex-shrink-0 z-10 !rounded-none">
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div class="flex items-center justify-between h-20">
+                            <div class="flex items-center">
+                                <i data-lucide="zap" class="w-8 h-8 text-indigo-400"></i>
+                                <span class="ml-3 text-2xl font-bold text-white">ActiveX Pro</span>
+                                <div class="hidden md:block ml-10">
+                                    <div class="flex items-baseline space-x-4">
+                                        <a href="#dashboard" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Dashboard</a>
+                                        <a href="#workouts" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Workouts</a>
+                                        <a href="#nutrition" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Nutrition</a>
+                                        <a href="#profile" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Profile</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="mr-4 font-semibold text-gray-300 hidden sm:block" id="user-greeting">Hello, User</span>
+                                <div class="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-lg" id="user-initials">U</div>
+                                <button id="logout-btn" class="ml-4 p-2 rounded-full text-gray-400 hover:text-white hover:bg-gray-700">
+                                    <i data-lucide="log-out" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </nav>
+
+                <!-- Main Content -->
+                <main class="flex-1 overflow-y-auto p-4 md:p-8">
+                    <div class="max-w-7xl mx-auto">
+                        <h1 id="page-title" class="text-3xl font-bold text-white mb-6">Dashboard</h1>
+                        
+                        <!-- Dashboard Content -->
+                        <div id="dashboard-content" class="content-section fade-in">
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                <div class="lg:col-span-2 space-y-6">
+                                    <div class="glass-card p-6">
+                                        <h3 class="text-xl font-semibold mb-4 text-white">Weight Progress</h3>
+                                        <div class="relative h-80"><canvas id="weightChart"></canvas></div>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div class="glass-card p-6 flex items-center"><i data-lucide="weight" class="h-10 w-10 text-indigo-400 mr-4"></i><div><h3 class="text-gray-400 text-sm font-medium">Current Weight</h3><p class="text-3xl font-bold text-white" id="dashboard-weight">0 kg</p></div></div>
+                                        <div class="glass-card p-6 flex items-center"><i data-lucide="siren" class="h-10 w-10 text-amber-400 mr-4"></i><div><h3 class="text-gray-400 text-sm font-medium">Weight Goal</h3><p class="text-3xl font-bold text-white" id="dashboard-goal">0 kg</p></div></div>
+                                    </div>
+                                </div>
+                                <div class="space-y-6">
+                                     <div class="glass-card p-6 text-center">
+                                        <h3 class="text-xl font-semibold mb-4 text-white">Calories Today</h3>
+                                        <div class="relative inline-flex items-center justify-center">
+                                            <svg class="w-40 h-40"><circle class="text-gray-700" stroke-width="10" stroke="currentColor" fill="transparent" r="60" cx="80" cy="80" /><circle class="progress-circle text-indigo-400" stroke-width="10" stroke-linecap="round" stroke="currentColor" fill="transparent" r="60" cx="80" cy="80" id="calorie-progress-circle"/></svg>
+                                            <div class="absolute flex flex-col items-center justify-center">
+                                                <span class="text-3xl font-bold text-white" id="dashboard-calories">0</span>
+                                                <span class="text-sm text-gray-400" id="dashboard-calorie-goal">/ 0 kcal</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="glass-card p-6">
+                                        <h3 class="text-xl font-semibold mb-4 text-white">Today's To-Do List</h3>
+                                        <form id="todo-form" class="flex mb-4"><input type="text" id="todo-input" placeholder="Add a new task..." class="flex-grow px-3 py-2 bg-gray-700/50 border border-gray-600 text-white rounded-l-md focus:outline-none focus:ring-2 focus:ring-indigo-500"><button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-r-md hover:bg-indigo-700"><i data-lucide="plus"></i></button></form>
+                                        <ul id="todo-list" class="space-y-2"></ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Workouts & Nutrition Content -->
+                        <div id="workouts-content" class="content-section fade-in">
+                             <div class="glass-card p-6 mb-6">
+                                <h3 class="text-xl font-semibold mb-4 text-white">Log a New Workout</h3>
+                                <form id="workout-form" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                                    <input type="text" id="workout-name" placeholder="Exercise Name" class="w-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                                    <input type="number" id="workout-sets" placeholder="Sets" class="w-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                                    <input type="number" id="workout-reps" placeholder="Reps" class="w-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                                    <button type="submit" class="w-full btn-primary text-white py-2 px-4 rounded-md flex items-center justify-center"><i data-lucide="plus" class="mr-2 h-4 w-4"></i> Add Workout</button>
+                                </form>
+                            </div>
+                            <div class="glass-card p-6">
+                                <h3 class="text-xl font-semibold mb-4 text-white">Workout History</h3>
+                                <div class="overflow-x-auto"><table class="w-full text-left"><thead><tr class="border-b border-gray-700"><th class="p-3 font-semibold text-gray-400">Date</th><th class="p-3 font-semibold text-gray-400">Exercise</th><th class="p-3 font-semibold text-gray-400">Sets</th><th class="p-3 font-semibold text-gray-400">Reps</th><th class="p-3 font-semibold text-right text-gray-400">Actions</th></tr></thead><tbody id="workout-history" class="divide-y divide-gray-700"></tbody></table></div>
+                            </div>
+                        </div>
+
+                        <div id="nutrition-content" class="content-section fade-in">
+                             <div class="glass-card p-6 mb-6">
+                                <h3 class="text-xl font-semibold mb-4 text-white">Log Nutrition</h3>
+                                <form id="nutrition-form" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                                    <input type="text" id="food-item" placeholder="Food Item" class="w-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                                    <input type="number" id="calories" placeholder="Calories" class="w-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                                    <button type="submit" class="w-full btn-primary text-white py-2 px-4 rounded-md flex items-center justify-center"><i data-lucide="plus" class="mr-2 h-4 w-4"></i>Add Food</button>
+                                </form>
+                            </div>
+                            <div class="glass-card p-6">
+                                <h3 class="text-xl font-semibold mb-4 text-white">Today's Food Log</h3>
+                                <div class="overflow-x-auto"><table class="w-full text-left"><thead><tr class="border-b border-gray-700"><th class="p-3 font-semibold text-gray-400">Food</th><th class="p-3 font-semibold text-gray-400">Calories</th><th class="p-3 font-semibold text-right text-gray-400">Actions</th></tr></thead><tbody id="nutrition-log" class="divide-y divide-gray-700"></tbody><tfoot><tr class="border-t-2 border-gray-600"><td class="p-3 font-bold text-white">Total</td><td class="p-3 font-bold text-white" id="total-calories">0</td><td></td></tr></tfoot></table></div>
+                            </div>
+                        </div>
+
+                        <!-- Profile Content -->
+                        <div id="profile-content" class="content-section fade-in">
+                            <div class="glass-card p-8 max-w-2xl mx-auto">
+                                <h3 class="text-2xl font-bold mb-6 text-white">Your Profile</h3>
+                                <form id="profile-form" class="space-y-4">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div><label class="block text-sm font-medium text-gray-400">Full Name</label><input type="text" id="profile-name" class="mt-1 block w-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-md text-white" readonly></div>
+                                        <div><label class="block text-sm font-medium text-gray-400">Username</label><input type="text" id="profile-username" class="mt-1 block w-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-md text-white" readonly></div>
+                                        <div><label class="block text-sm font-medium text-gray-400">Age</label><input type="number" id="profile-age" class="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md text-white bg-gray-700/50 focus:ring-2 focus:ring-indigo-500"></div>
+                                        <div><label class="block text-sm font-medium text-gray-400">Height (cm)</label><input type="number" id="profile-height" class="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md text-white bg-gray-700/50 focus:ring-2 focus:ring-indigo-500"></div>
+                                        <div><label class="block text-sm font-medium text-gray-400">Weight (kg)</label><input type="number" id="profile-weight" class="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md text-white bg-gray-700/50 focus:ring-2 focus:ring-indigo-500"></div>
+                                        <div><label class="block text-sm font-medium text-gray-400">Goal Weight (kg)</label><input type="number" id="profile-goal" class="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md text-white bg-gray-700/50 focus:ring-2 focus:ring-indigo-500"></div>
+                                    </div>
+                                    <div><label class="block text-sm font-medium text-gray-400">Description</label><textarea id="profile-description" rows="3" class="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md text-white bg-gray-700/50 focus:ring-2 focus:ring-indigo-500"></textarea></div>
+                                    <div class="text-right pt-4"><button type="submit" class="btn-primary text-white py-2 px-6 rounded-md">Save Changes</button></div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+        
+        <!-- Modals -->
+        <div id="message-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+            <div class="glass-card p-6 w-full max-w-sm text-center transform transition-all scale-95 opacity-0"><p id="modal-message-text" class="text-lg mb-4 text-white"></p><button id="modal-close-btn" class="btn-primary text-white py-2 px-4 rounded-md">Close</button></div>
+        </div>
+        <div id="todo-edit-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+            <div class="glass-card p-6 w-full max-w-sm transform transition-all scale-95 opacity-0">
+                <h3 class="text-lg font-medium mb-4 text-white">Edit Task</h3><input type="text" id="todo-edit-input" class="w-full px-3 py-2 border border-gray-600 rounded-md text-white bg-gray-700/50 mb-4">
+                <div class="flex justify-end space-x-2"><button id="todo-edit-cancel" class="bg-gray-600 text-gray-200 py-2 px-4 rounded-md hover:bg-gray-500">Cancel</button><button id="todo-edit-save" class="btn-primary text-white py-2 px-4 rounded-md">Save</button></div>
+            </div>
+        </div>
+        <div id="workout-edit-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+            <div class="glass-card p-6 w-full max-w-sm transform transition-all scale-95 opacity-0">
+                <h3 class="text-lg font-medium mb-4 text-white">Edit Workout</h3>
+                <div class="space-y-4"><input type="text" id="workout-edit-name" class="w-full px-3 py-2 border border-gray-600 rounded-md text-white bg-gray-700/50"><input type="number" id="workout-edit-sets" class="w-full px-3 py-2 border border-gray-600 rounded-md text-white bg-gray-700/50"><input type="number" id="workout-edit-reps" class="w-full px-3 py-2 border border-gray-600 rounded-md text-white bg-gray-700/50"></div>
+                <div class="flex justify-end space-x-2 mt-4"><button id="workout-edit-cancel" class="bg-gray-600 text-gray-200 py-2 px-4 rounded-md hover:bg-gray-500">Cancel</button><button id="workout-edit-save" class="btn-primary text-white py-2 px-4 rounded-md">Save</button></div>
+            </div>
+        </div>
+        <div id="nutrition-edit-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+            <div class="glass-card p-6 w-full max-w-sm transform transition-all scale-95 opacity-0">
+                <h3 class="text-lg font-medium mb-4 text-white">Edit Nutrition Entry</h3>
+                <div class="space-y-4"><input type="text" id="nutrition-edit-name" class="w-full px-3 py-2 border border-gray-600 rounded-md text-white bg-gray-700/50"><input type="number" id="nutrition-edit-calories" class="w-full px-3 py-2 border border-gray-600 rounded-md text-white bg-gray-700/50"></div>
+                <div class="flex justify-end space-x-2 mt-4"><button id="nutrition-edit-cancel" class="bg-gray-600 text-gray-200 py-2 px-4 rounded-md hover:bg-gray-500">Cancel</button><button id="nutrition-edit-save" class="btn-primary text-white py-2 px-4 rounded-md">Save</button></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Google Sign-In Handler (must be in global scope) ---
+        function handleGoogleSignIn(response) {
+            const payload = JSON.parse(atob(response.credential.split('.')[1]));
+            document.dispatchEvent(new CustomEvent('google-signin', { detail: payload }));
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+
+            // --- STATE MANAGEMENT ---
+            let currentUser = null;
+            let weightChart = null;
+            let editingId = null;
+
+            // --- DOM ELEMENTS ---
+            const pages = { auth: document.getElementById('auth-page'), main: document.getElementById('main-app-page') };
+            const forms = { login: document.getElementById('login-form'), signup: document.getElementById('signup-form'), profile: document.getElementById('profile-form'), workout: document.getElementById('workout-form'), nutrition: document.getElementById('nutrition-form'), todo: document.getElementById('todo-form'), };
+            const contentSections = { dashboard: document.getElementById('dashboard-content'), workouts: document.getElementById('workouts-content'), nutrition: document.getElementById('nutrition-content'), profile: document.getElementById('profile-content'), };
+            const navLinks = document.querySelectorAll('.nav-link');
+            const passwordToggles = document.querySelectorAll('.password-toggle');
+            const modals = {
+                message: { el: document.getElementById('message-modal'), content: document.getElementById('message-modal').querySelector('div'), text: document.getElementById('modal-message-text'), closeBtn: document.getElementById('modal-close-btn'), },
+                todoEdit: { el: document.getElementById('todo-edit-modal'), content: document.getElementById('todo-edit-modal').querySelector('div'), input: document.getElementById('todo-edit-input'), saveBtn: document.getElementById('todo-edit-save'), cancelBtn: document.getElementById('todo-edit-cancel'), },
+                workoutEdit: { el: document.getElementById('workout-edit-modal'), content: document.getElementById('workout-edit-modal').querySelector('div'), name: document.getElementById('workout-edit-name'), sets: document.getElementById('workout-edit-sets'), reps: document.getElementById('workout-edit-reps'), saveBtn: document.getElementById('workout-edit-save'), cancelBtn: document.getElementById('workout-edit-cancel'), },
+                nutritionEdit: { el: document.getElementById('nutrition-edit-modal'), content: document.getElementById('nutrition-edit-modal').querySelector('div'), name: document.getElementById('nutrition-edit-name'), calories: document.getElementById('nutrition-edit-calories'), saveBtn: document.getElementById('nutrition-edit-save'), cancelBtn: document.getElementById('nutrition-edit-cancel'), },
+            };
+            const workoutHistoryTable = document.getElementById('workout-history');
+            const nutritionLogTable = document.getElementById('nutrition-log');
+
+            // --- DATABASE SIMULATION (using localStorage) ---
+            const getUserDB = () => JSON.parse(localStorage.getItem('fitTrackUsers')) || [];
+            const saveUserDB = (db) => localStorage.setItem('fitTrackUsers', JSON.stringify(db));
+            const updateUserInDB = (user) => {
+                if (!user) return;
+                const db = getUserDB();
+                const userIndex = db.findIndex(u => u.username === user.username);
+                if (userIndex > -1) {
+                    db[userIndex] = user;
+                    saveUserDB(db);
+                }
+            };
+
+            // --- UTILITY FUNCTIONS ---
+            const calculateCalorieGoal = (weight, height, age, goalWeight) => {
+                if (!weight || !height || !age || !goalWeight) return 0;
+                const bmr = (10 * weight) + (6.25 * height) - (5 * age) - 78;
+                let maintenanceCalories = bmr * 1.55;
+                if (goalWeight < weight) return Math.round((maintenanceCalories - 500) / 10) * 10;
+                if (goalWeight > weight) return Math.round((maintenanceCalories + 500) / 10) * 10;
+                return Math.round(maintenanceCalories / 10) * 10;
+            };
+            const createNewUser = (data) => {
+                const { name, username, age, height, weight, goal, description, password } = data;
+                const [ageNum, heightNum, weightNum, goalNum] = [parseInt(age), parseInt(height), parseFloat(weight), parseFloat(goal)];
+                return {
+                    name, username, password, age: ageNum, height: heightNum, weight: weightNum, goal: goalNum, description,
+                    calorieGoal: calculateCalorieGoal(weightNum, heightNum, ageNum, goalNum),
+                    weightHistory: [{ date: new Date().toLocaleDateString('en-US', {month: 'short', day: 'numeric'}), weight: weightNum }],
+                    workouts: [], nutrition: [], todos: []
+                };
+            };
+            
+            // --- NAVIGATION & UI ---
+            const showPage = (pageName) => { Object.values(pages).forEach(p => p.classList.remove('active')); pages[pageName]?.classList.add('active'); };
+            const showContent = (contentName) => {
+                Object.values(contentSections).forEach(s => s.classList.remove('active'));
+                contentSections[contentName]?.classList.add('active');
+                document.getElementById('page-title').textContent = contentName.charAt(0).toUpperCase() + contentName.slice(1);
+                navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === `#${contentName}`));
+            };
+            navLinks.forEach(l => l.addEventListener('click', (e) => { e.preventDefault(); showContent(e.currentTarget.getAttribute('href').substring(1)); }));
+
+            // --- AUTHENTICATION ---
+            const processGoogleSignIn = (payload) => {
+                const db = getUserDB();
+                let user = db.find(u => u.username === payload.email);
+                if (user) {
+                    currentUser = user;
+                } else {
+                    const newUser = {
+                        name: payload.name,
+                        username: payload.email,
+                        password: `google_auth_${Date.now()}`,
+                        age: 0, height: 0, weight: 0, goal: 0,
+                        description: "Welcome! Please complete your profile.",
+                        calorieGoal: 0, weightHistory: [], workouts: [], nutrition: [], todos: []
+                    };
+                    db.push(newUser);
+                    saveUserDB(db);
+                    currentUser = newUser;
+                }
+                initializeApp();
+            };
+            
+            const handleLogin = (e) => {
+                e.preventDefault();
+                const user = getUserDB().find(u => u.username === forms.login['username'].value);
+                if (user && user.password === forms.login['password'].value) {
+                    currentUser = user;
+                    initializeApp();
+                } else {
+                    showMessage('Invalid username or password.');
+                }
+            };
+            const handleSignup = (e) => {
+                e.preventDefault();
+                const data = Object.fromEntries(new FormData(forms.signup).entries());
+                if (data.password !== data.confirmPassword) return showMessage("Passwords do not match.");
+                const db = getUserDB();
+                if (db.some(u => u.username === data.username)) return showMessage("Username already exists.");
+                db.push(createNewUser(data));
+                saveUserDB(db);
+                showMessage('Signup successful! Please log in.');
+                document.getElementById('toggle-auth').click();
+                forms.signup.reset();
+            };
+            const handleLogout = () => { currentUser = null; sessionStorage.removeItem('loggedInUser'); showPage('auth'); forms.login.reset(); };
+            document.getElementById('toggle-auth').addEventListener('click', (e) => { e.preventDefault(); const isLoginVisible = forms.login.checkVisibility(); forms.login.classList.toggle('hidden', isLoginVisible); forms.signup.classList.toggle('hidden', !isLoginVisible); document.getElementById('auth-subtitle').textContent = isLoginVisible ? 'Create an account' : 'Login to your account'; e.target.textContent = isLoginVisible ? "Already have an account? Sign in" : "Don't have an account? Sign up"; });
+            passwordToggles.forEach(toggle => {
+                toggle.addEventListener('click', () => {
+                    const input = toggle.closest('.relative').querySelector('input');
+                    const isPassword = input.type === 'password';
+                    input.type = isPassword ? 'text' : 'password';
+                    toggle.innerHTML = `<i data-lucide="${isPassword ? 'eye' : 'eye-off'}" class="h-5 w-5 text-gray-400"></i>`;
+                    lucide.createIcons();
+                });
+            });
+            
+            // --- APP INITIALIZATION ---
+            const initializeApp = () => { sessionStorage.setItem('loggedInUser', JSON.stringify(currentUser)); showPage('main'); showContent('dashboard'); populateUserData(); };
+            const checkSession = () => { const user = sessionStorage.getItem('loggedInUser'); if (user) { currentUser = JSON.parse(user); initializeApp(); } else { showPage('auth'); } };
+
+            // --- DATA POPULATION & RENDERING ---
+            const populateUserData = () => {
+                if (!currentUser) return;
+                document.getElementById('user-greeting').textContent = `Hello, ${currentUser.name.split(' ')[0]}`;
+                document.getElementById('user-initials').textContent = currentUser.name.charAt(0).toUpperCase();
+                document.getElementById('dashboard-weight').textContent = `${currentUser.weight} kg`;
+                document.getElementById('dashboard-goal').textContent = `${currentUser.goal} kg`;
+                document.getElementById('profile-name').value = currentUser.name;
+                document.getElementById('profile-username').value = currentUser.username;
+                document.getElementById('profile-age').value = currentUser.age;
+                document.getElementById('profile-height').value = currentUser.height;
+                document.getElementById('profile-weight').value = currentUser.weight;
+                document.getElementById('profile-goal').value = currentUser.goal;
+                document.getElementById('profile-description').value = currentUser.description;
+                renderWorkoutHistory(); renderNutritionLog(); renderWeightChart(); renderTodos();
+            };
+            
+            const renderWeightChart = () => {
+                if (!currentUser || !document.getElementById('weightChart')) return;
+                const ctx = document.getElementById('weightChart').getContext('2d');
+                if (weightChart) weightChart.destroy();
+                weightChart = new Chart(ctx, { 
+                    type: 'bar', data: { 
+                        labels: currentUser.weightHistory.map(e => e.date), 
+                        datasets: [{ 
+                            label: 'Weight (kg)', data: currentUser.weightHistory.map(e => e.weight), 
+                            borderColor: '#6366F1', backgroundColor: 'rgba(99, 102, 241, 0.5)', borderRadius: 4,
+                        }] 
+                    }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: false, grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#9CA3AF' } }, x: { grid: { display: false }, ticks: { color: '#9CA3AF' } } }, plugins: { legend: { display: false } } } 
+                });
+            };
+            
+            const renderList = (tableBody, items, rowHtml) => {
+                tableBody.innerHTML = '';
+                items.slice().reverse().forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = rowHtml(item);
+                    tableBody.appendChild(tr);
+                });
+                lucide.createIcons();
+            };
+
+            const renderWorkoutHistory = () => renderList(workoutHistoryTable, currentUser.workouts, w => `<td class="p-3">${w.date}</td><td class="p-3">${w.name}</td><td class="p-3">${w.sets}</td><td class="p-3">${w.reps}</td><td class="p-3 text-right space-x-2"><button class="text-gray-400 hover:text-indigo-400 p-1 edit-btn" data-id="${w.id}"><i data-lucide="pencil" class="h-4 w-4"></i></button><button class="text-gray-400 hover:text-red-500 p-1 delete-btn" data-id="${w.id}"><i data-lucide="trash-2" class="h-4 w-4"></i></button></td>`);
+            const renderNutritionLog = () => { renderList(nutritionLogTable, currentUser.nutrition, n => `<td class="p-3">${n.name}</td><td class="p-3">${n.calories}</td><td class="p-3 text-right space-x-2"><button class="text-gray-400 hover:text-indigo-400 p-1 edit-btn" data-id="${n.id}"><i data-lucide="pencil" class="h-4 w-4"></i></button><button class="text-gray-400 hover:text-red-500 p-1 delete-btn" data-id="${n.id}"><i data-lucide="trash-2" class="h-4 w-4"></i></button></td>`); updateDashboardCalories(); };
+
+            const updateDashboardCalories = () => {
+                const total = currentUser.nutrition.reduce((sum, item) => sum + item.calories, 0);
+                document.getElementById('total-calories').textContent = total;
+                document.getElementById('dashboard-calories').textContent = total;
+                document.getElementById('dashboard-calorie-goal').textContent = `/ ${currentUser.calorieGoal} kcal`;
+                
+                const circle = document.getElementById('calorie-progress-circle');
+                const radius = circle.r.baseVal.value;
+                const circumference = 2 * Math.PI * radius;
+                const percent = currentUser.calorieGoal > 0 ? Math.min(total / currentUser.calorieGoal, 1) : 0;
+                const offset = circumference - percent * circumference;
+                circle.style.strokeDashoffset = offset;
+            };
+
+            // --- To-Do List ---
+            const renderTodos = () => {
+                const todoList = document.getElementById('todo-list');
+                todoList.innerHTML = '';
+                currentUser.todos.forEach(todo => {
+                    const li = document.createElement('li');
+                    li.className = `todo-item flex items-center justify-between p-2 rounded-md ${todo.completed ? 'completed' : ''}`;
+                    li.dataset.id = todo.id;
+                    li.innerHTML = `<div class="flex items-center"><input type="checkbox" class="h-4 w-4 rounded border-gray-500 bg-gray-700 text-indigo-500 focus:ring-indigo-500" ${todo.completed ? 'checked' : ''}> <span class="ml-3 text-sm">${todo.text}</span></div><div class="flex items-center space-x-2"><button class="text-gray-400 hover:text-indigo-400 edit-btn"><i data-lucide="pencil" class="h-4 w-4"></i></button><button class="text-gray-400 hover:text-red-500 delete-btn"><i data-lucide="trash-2" class="h-4 w-4"></i></button></div>`;
+                    todoList.appendChild(li);
+                });
+                lucide.createIcons();
+            };
+
+            const setupCrudListeners = (element, type) => {
+                element.addEventListener('click', (e) => {
+                    const target = e.target.closest('button, input[type="checkbox"]');
+                    if (!target) return;
+                    const parent = target.closest('[data-id]');
+                    const id = parseInt(parent.dataset.id);
+                    const item = currentUser[type].find(i => i.id === id);
+
+                    if (target.matches('input[type="checkbox"]') && type === 'todos') {
+                        item.completed = target.checked;
+                        parent.classList.toggle('completed', item.completed);
+                    } else if (target.matches('.edit-btn')) {
+                        editingId = id;
+                        if (type === 'todos') { modals.todoEdit.input.value = item.text; showModal(modals.todoEdit); }
+                        if (type === 'workouts') { modals.workoutEdit.name.value = item.name; modals.workoutEdit.sets.value = item.sets; modals.workoutEdit.reps.value = item.reps; showModal(modals.workoutEdit); }
+                        if (type === 'nutrition') { modals.nutritionEdit.name.value = item.name; modals.nutritionEdit.calories.value = item.calories; showModal(modals.nutritionEdit); }
+                    } else if (target.matches('.delete-btn')) {
+                        currentUser[type] = currentUser[type].filter(i => i.id !== id);
+                        if (type === 'todos') renderTodos();
+                        if (type === 'workouts') renderWorkoutHistory();
+                        if (type === 'nutrition') renderNutritionLog();
+                    }
+                    updateUserInDB(currentUser);
+                });
+            };
+            setupCrudListeners(document.getElementById('todo-list'), 'todos');
+            setupCrudListeners(workoutHistoryTable, 'workouts');
+            setupCrudListeners(nutritionLogTable, 'nutrition');
+
+            // --- FORM SUBMISSIONS ---
+            forms.profile.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const newWeight = parseFloat(document.getElementById('profile-weight').value);
+                const newGoal = parseFloat(document.getElementById('profile-goal').value);
+                const newAge = parseInt(document.getElementById('profile-age').value);
+                const newHeight = parseInt(document.getElementById('profile-height').value);
+                if (newWeight !== currentUser.weight) {
+                    currentUser.weightHistory.push({ date: new Date().toLocaleDateString('en-US', {month: 'short', day: 'numeric'}), weight: newWeight });
+                    if (currentUser.weightHistory.length > 30) currentUser.weightHistory.shift();
+                }
+                currentUser.age = newAge; currentUser.height = newHeight; currentUser.weight = newWeight; currentUser.goal = newGoal;
+                currentUser.description = document.getElementById('profile-description').value;
+                currentUser.calorieGoal = calculateCalorieGoal(newWeight, newHeight, newAge, newGoal);
+                updateUserInDB(currentUser);
+                sessionStorage.setItem('loggedInUser', JSON.stringify(currentUser));
+                populateUserData();
+                showMessage('Profile updated successfully!');
+            });
+            forms.todo.addEventListener('submit', (e) => { e.preventDefault(); const input = document.getElementById('todo-input'); if (input.value.trim()) { currentUser.todos.push({ id: Date.now(), text: input.value.trim(), completed: false }); renderTodos(); input.value = ''; updateUserInDB(currentUser);} });
+            forms.workout.addEventListener('submit', (e) => { e.preventDefault(); currentUser.workouts.push({ id: Date.now(), date: new Date().toLocaleDateString(), name: document.getElementById('workout-name').value, sets: parseInt(document.getElementById('workout-sets').value), reps: parseInt(document.getElementById('workout-reps').value) }); renderWorkoutHistory(); forms.workout.reset(); updateUserInDB(currentUser); });
+            forms.nutrition.addEventListener('submit', (e) => { e.preventDefault(); currentUser.nutrition.push({ id: Date.now(), name: document.getElementById('food-item').value, calories: parseInt(document.getElementById('calories').value) }); renderNutritionLog(); forms.nutrition.reset(); updateUserInDB(currentUser);});
+            modals.todoEdit.saveBtn.addEventListener('click', () => { const newText = modals.todoEdit.input.value.trim(); if (newText && editingId) { currentUser.todos.find(t => t.id === editingId).text = newText; renderTodos(); hideModal(modals.todoEdit); editingId = null; updateUserInDB(currentUser); } });
+            modals.workoutEdit.saveBtn.addEventListener('click', () => { const workout = currentUser.workouts.find(w => w.id === editingId); workout.name = modals.workoutEdit.name.value; workout.sets = modals.workoutEdit.sets.value; workout.reps = modals.workoutEdit.reps.value; renderWorkoutHistory(); hideModal(modals.workoutEdit); editingId = null; updateUserInDB(currentUser);});
+            modals.nutritionEdit.saveBtn.addEventListener('click', () => { const nutrition = currentUser.nutrition.find(n => n.id === editingId); nutrition.name = modals.nutritionEdit.name.value; nutrition.calories = parseInt(modals.nutritionEdit.calories.value); renderNutritionLog(); hideModal(modals.nutritionEdit); editingId = null; updateUserInDB(currentUser);});
+
+            // --- MODAL UTILITY ---
+            const showModal = (modal) => { modal.el.classList.remove('hidden'); setTimeout(() => { modal.content.classList.remove('scale-95', 'opacity-0'); modal.content.classList.add('scale-100', 'opacity-100'); }, 10); };
+            const hideModal = (modal) => { modal.content.classList.add('scale-95', 'opacity-0'); setTimeout(() => { modal.el.classList.add('hidden'); }, 200); };
+            const showMessage = (message) => { modals.message.text.textContent = message; showModal(modals.message); };
+            
+            // --- EVENT LISTENERS ---
+            forms.login.addEventListener('submit', handleLogin);
+            forms.signup.addEventListener('submit', handleSignup);
+            document.getElementById('logout-btn').addEventListener('click', handleLogout);
+            document.addEventListener('google-signin', (e) => processGoogleSignIn(e.detail));
+            Object.values(modals).forEach(modal => {
+                modal.closeBtn?.addEventListener('click', () => hideModal(modal));
+                modal.cancelBtn?.addEventListener('click', () => hideModal(modal));
+            });
+
+            // --- INITIAL LOAD ---
+            checkSession();
+        });
+    </script>
+</body>
+</html>
+
