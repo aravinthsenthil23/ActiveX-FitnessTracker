@@ -8,7 +8,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Google Identity Services -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         :root {
@@ -83,10 +82,8 @@
 </head>
 <body class="antialiased">
 
-    <!-- App Container -->
     <div id="app" class="min-h-screen">
 
-        <!-- Login/Signup Page -->
         <div id="auth-page" class="page active bg-gradient-to-br from-gray-900 to-gray-800">
             <div class="flex items-center justify-center min-h-screen p-4">
                 <div class="w-full max-w-md p-8 space-y-6 glass-card fade-in">
@@ -96,7 +93,6 @@
                         <p class="mt-2 text-sm text-gray-400" id="auth-subtitle">Login to continue your journey</p>
                     </div>
 
-                    <!-- Login Form -->
                     <form id="login-form" class="mt-8 space-y-6">
                         <div class="rounded-md space-y-4">
                             <input id="login-username" name="username" type="text" required class="appearance-none bg-gray-700/50 border border-gray-600 placeholder-gray-400 text-white rounded-lg block w-full px-3 py-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Username">
@@ -120,7 +116,6 @@
                         <div class="flex-grow border-t border-gray-600"></div>
                     </div>
 
-                    <!-- Google Sign-In Button -->
                     <div id="g_id_onload"
                          data-client_id="914192437738-bnf7d6sut68jp1j3vlmehvdpafqhoq0t.apps.googleusercontent.com"
                          data-callback="handleGoogleSignIn"
@@ -136,7 +131,6 @@
                          data-logo_alignment="left">
                     </div>
 
-                    <!-- Signup Form -->
                     <form id="signup-form" class="mt-8 space-y-4 hidden">
                          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <input name="name" type="text" required class="w-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Full Name">
@@ -161,16 +155,16 @@
             </div>
         </div>
 
-        <!-- Main App Page -->
         <div id="main-app-page" class="page">
             <div class="flex flex-col h-screen">
-                <!-- Top Navigation -->
                 <nav class="glass-card flex-shrink-0 z-10 !rounded-none">
                     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div class="flex items-center justify-between h-20">
                             <div class="flex items-center">
-                                <i data-lucide="zap" class="w-8 h-8 text-indigo-400"></i>
-                                <span class="ml-3 text-2xl font-bold text-white">ActiveX Pro</span>
+                                <div id="logo-trigger" class="flex items-center cursor-pointer">
+                                    <i data-lucide="zap" class="w-8 h-8 text-indigo-400"></i>
+                                    <span class="ml-3 text-2xl font-bold text-white">ActiveX Pro</span>
+                                </div>
                                 <div class="hidden md:block ml-10">
                                     <div class="flex items-baseline space-x-4">
                                         <a href="#dashboard" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Dashboard</a>
@@ -186,17 +180,31 @@
                                 <button id="logout-btn" class="ml-4 p-2 rounded-full text-gray-400 hover:text-white hover:bg-gray-700">
                                     <i data-lucide="log-out" class="w-5 h-5"></i>
                                 </button>
+                                <div class="ml-2 md:hidden">
+                                    <button id="hamburger-button" type="button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white" aria-controls="mobile-menu" aria-expanded="false">
+                                        <span class="sr-only">Open main menu</span>
+                                        <i data-lucide="menu" class="block h-6 w-6"></i>
+                                    </button>
+                                </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <div class="md:hidden hidden" id="mobile-menu">
+                        <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                            <a href="#dashboard" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Dashboard</a>
+                            <a href="#workouts" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Workouts</a>
+                            <a href="#nutrition" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Nutrition</a>
+                            <a href="#profile" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Profile</a>
                         </div>
                     </div>
                 </nav>
 
-                <!-- Main Content -->
+
                 <main class="flex-1 overflow-y-auto p-4 md:p-8">
                     <div class="max-w-7xl mx-auto">
                         <h1 id="page-title" class="text-3xl font-bold text-white mb-6">Dashboard</h1>
                         
-                        <!-- Dashboard Content -->
                         <div id="dashboard-content" class="content-section fade-in">
                             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                 <div class="lg:col-span-2 space-y-6">
@@ -229,7 +237,6 @@
                             </div>
                         </div>
 
-                        <!-- Workouts & Nutrition Content -->
                         <div id="workouts-content" class="content-section fade-in">
                              <div class="glass-card p-6 mb-6">
                                 <h3 class="text-xl font-semibold mb-4 text-white">Log a New Workout</h3>
@@ -261,7 +268,6 @@
                             </div>
                         </div>
 
-                        <!-- Profile Content -->
                         <div id="profile-content" class="content-section fade-in">
                             <div class="glass-card p-8 max-w-2xl mx-auto">
                                 <h3 class="text-2xl font-bold mb-6 text-white">Your Profile</h3>
@@ -284,7 +290,6 @@
             </div>
         </div>
         
-        <!-- Modals -->
         <div id="message-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
             <div class="glass-card p-6 w-full max-w-sm text-center transform transition-all scale-95 opacity-0"><p id="modal-message-text" class="text-lg mb-4 text-white"></p><button id="modal-close-btn" class="btn-primary text-white py-2 px-4 rounded-md">Close</button></div>
         </div>
@@ -331,6 +336,11 @@
             const contentSections = { dashboard: document.getElementById('dashboard-content'), workouts: document.getElementById('workouts-content'), nutrition: document.getElementById('nutrition-content'), profile: document.getElementById('profile-content'), };
             const navLinks = document.querySelectorAll('.nav-link');
             const passwordToggles = document.querySelectorAll('.password-toggle');
+            // MODIFIED: Added mobile menu elements
+            const logoTrigger = document.getElementById('logo-trigger');
+            const hamburgerButton = document.getElementById('hamburger-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+
             const modals = {
                 message: { el: document.getElementById('message-modal'), content: document.getElementById('message-modal').querySelector('div'), text: document.getElementById('modal-message-text'), closeBtn: document.getElementById('modal-close-btn'), },
                 todoEdit: { el: document.getElementById('todo-edit-modal'), content: document.getElementById('todo-edit-modal').querySelector('div'), input: document.getElementById('todo-edit-input'), saveBtn: document.getElementById('todo-edit-save'), cancelBtn: document.getElementById('todo-edit-cancel'), },
@@ -586,10 +596,32 @@
                 modal.cancelBtn?.addEventListener('click', () => hideModal(modal));
             });
 
+            // ADDED: Mobile menu toggle functionality
+            const toggleMobileMenu = () => {
+                mobileMenu.classList.toggle('hidden');
+                const isExpanded = !mobileMenu.classList.contains('hidden');
+                hamburgerButton.setAttribute('aria-expanded', isExpanded);
+            };
+
+            hamburgerButton.addEventListener('click', toggleMobileMenu);
+            logoTrigger.addEventListener('click', () => {
+                // Only trigger if in mobile view
+                if (window.innerWidth < 768) { // 768px is Tailwind's 'md' breakpoint
+                    toggleMobileMenu();
+                }
+            });
+
+            // Close mobile menu when a nav link is clicked
+            mobileMenu.addEventListener('click', (e) => {
+                if (e.target.closest('a')) {
+                    toggleMobileMenu();
+                }
+            });
+
+
             // --- INITIAL LOAD ---
             checkSession();
         });
     </script>
 </body>
 </html>
-
