@@ -36,7 +36,7 @@ Modular JS: Organized logic to handle calorie calculations and progress tracking
 Clone the Repository
 
 Bash
-git clone https://github.com/aravinthsenthil23/activex-fitnesstrackers.git
+git clone https://github.com/aravinthsenthil23/activeX-FitnessTracker.git
 Navigate to Project Folder
 
 Bash
