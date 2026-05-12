@@ -41,13 +41,13 @@ You can view the live project here: **https://activex.netlify.app/**
 * Clone the repository:
 
 ```Bash
-git clone [https://github.com/your-username/active-x-fitness.git](https://github.com/your-username/active-x-fitness.git)
+git clone [https://github.com/aravinthsenthil23/ActiveX-FitnessTracker.git](https://github.com/aravinthsenthil23/ActiveX-FitnessTracker.git)
 ```
 
 * Navigate to the directory:
 
 ```Bash
-cd active-x-fitness
+cd activeX-FitnessTracker
 ```
 * Run the project:
 ** Open index.html in your preferred web browser.
