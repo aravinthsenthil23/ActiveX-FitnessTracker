@@ -35,17 +35,22 @@ You can view the live project here: **[Insert Your Netlify/GitHub Link Here]**
 ├── js/
 │   └── app.js          # Logic for tracking calculations and storage
 └── assets/             # Icons, fitness imagery, and favicons
-🔧 Installation & Local Setup
-Clone the repository:
+```
 
-Bash
+##🔧 Installation & Local Setup
+* Clone the repository:
+
+```Bash
 git clone [https://github.com/your-username/active-x-fitness.git](https://github.com/your-username/active-x-fitness.git)
-Navigate to the directory:
+```
 
-Bash
+* Navigate to the directory:
+
+```Bash
 cd active-x-fitness
-Run the project:
-Open index.html in your preferred web browser.
+```
+* Run the project:
+* Open index.html in your preferred web browser.
 
 🤝 Contact & Socials
 LinkedIn: [Your LinkedIn Profile]
