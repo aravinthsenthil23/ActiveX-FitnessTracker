@@ -18,7 +18,7 @@
 
 ## 🚀 Live Demo
 
-You can view the live project here: **[Insert Your Netlify/GitHub Link Here]**
+You can view the live project here: **https://activex.netlify.app/**
 
 ## 🛠️ Technical Stack
 
@@ -50,13 +50,13 @@ git clone [https://github.com/your-username/active-x-fitness.git](https://github
 cd active-x-fitness
 ```
 * Run the project:
-* Open index.html in your preferred web browser.
+** Open index.html in your preferred web browser.
 
 🤝 Contact & Socials
-LinkedIn: [Your LinkedIn Profile]
+LinkedIn: www.linkedin.com/in/senthilaravinth
 
-GitHub: @your-username
+GitHub: @aravinthsenthil23
 
-Portfolio: [Link to your personal portfolio]
+Portfolio: https://personal-portfolio-aravinth.netlify.app/
 
 Built as part of my Full-Stack Web Development journey.
