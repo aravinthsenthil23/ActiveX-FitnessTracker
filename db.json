@@ -1,0 +1,24 @@
+{
+  "users": [
+    {
+      "id": "1778616120020",
+      "name": "Aravinth",
+      "username": "Aravinthsenthil",
+      "password": "@Aravinthkarish23",
+      "age": 20,
+      "height": 140,
+      "weight": 52,
+      "goal": 60,
+      "description": "I want to gain weight fast",
+      "calorieGoal": 2000,
+      "weightHistory": [],
+      "workouts": [],
+      "nutrition": [],
+      "todos": []
+    }
+  ],
+  "sessions": {
+    "0.y9cgp2cd5p": "1778616120020",
+    "0.dxfahjb086e": "1778616120020"
+  }
+}

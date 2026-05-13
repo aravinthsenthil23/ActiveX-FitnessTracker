@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ActiveX | FitnessTracking</title>
+    <title>FitTrack Pro - Your Ultimate Fitness Companion</title>
     <link rel="shortcut icon" href="./imgi_1_default.jpeg" type="image/x-icon">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -134,7 +134,7 @@
 
                     <form id="signup-form" class="mt-8 space-y-4 hidden">
                          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <input name="name" type="text" required class="w-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Full Name">
+                            <input name="name" type="text" required class="w'-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Full Name">
                             <input name="username" type="text" required class="w-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Username">
                             <input name="age" type="number" required class="w-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Age">
                             <input name="height" type="number" required class="w-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Height (cm)">
@@ -328,6 +328,7 @@
 
             // --- STATE MANAGEMENT ---
             let currentUser = null;
+            let sessionId = null;
             let weightChart = null;
             let editingId = null;
 
@@ -351,17 +352,72 @@
             const workoutHistoryTable = document.getElementById('workout-history');
             const nutritionLogTable = document.getElementById('nutrition-log');
 
-            // --- DATABASE SIMULATION (using localStorage) ---
-            const getUserDB = () => JSON.parse(localStorage.getItem('fitTrackUsers')) || [];
-            const saveUserDB = (db) => localStorage.setItem('fitTrackUsers', JSON.stringify(db));
-            const updateUserInDB = (user) => {
-                if (!user) return;
-                const db = getUserDB();
-                const userIndex = db.findIndex(u => u.username === user.username);
-                if (userIndex > -1) {
-                    db[userIndex] = user;
-                    saveUserDB(db);
-                }
+            // --- API FUNCTIONS ---
+            const apiCall = async (endpoint, options = {}) => {
+                const response = await fetch(`http://localhost:3000${endpoint}`, {
+                    headers: { 'Content-Type': 'application/json', ...options.headers },
+                    ...options
+                });
+                if (!response.ok) throw new Error(await response.text());
+                return response.json();
+            };
+
+            const login = async (username, password) => {
+                const data = await apiCall('/api/login', { method: 'POST', body: JSON.stringify({ username, password }) });
+                sessionId = data.sessionId;
+                currentUser = data.user;
+                localStorage.setItem('sessionId', sessionId);
+            };
+
+            const register = async (userData) => {
+                await apiCall('/api/register', { method: 'POST', body: JSON.stringify(userData) });
+            };
+
+            const getUser = async () => {
+                currentUser = await apiCall(`/api/user/${sessionId}`);
+            };
+
+            const updateUser = async (updates) => {
+                currentUser = await apiCall(`/api/user/${sessionId}`, { method: 'PUT', body: JSON.stringify(updates) });
+            };
+
+            const logout = async () => {
+                await apiCall(`/api/logout/${sessionId}`, { method: 'POST' });
+                sessionId = null;
+                currentUser = null;
+                localStorage.removeItem('sessionId');
+            };
+
+            const addWorkout = async (workout) => {
+                const newWorkout = await apiCall(`/api/user/${sessionId}/workouts`, { method: 'POST', body: JSON.stringify(workout) });
+                currentUser.workouts.push(newWorkout);
+            };
+
+            const updateWorkout = async (id, updates) => {
+                const updated = await apiCall(`/api/user/${sessionId}/workouts/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
+                const index = currentUser.workouts.findIndex(w => w.id === id);
+                currentUser.workouts[index] = updated;
+            };
+
+            const deleteWorkout = async (id) => {
+                await apiCall(`/api/user/${sessionId}/workouts/${id}`, { method: 'DELETE' });
+                currentUser.workouts = currentUser.workouts.filter(w => w.id !== id);
+            };
+
+            const addNutrition = async (nutrition) => {
+                const newNutrition = await apiCall(`/api/user/${sessionId}/nutrition`, { method: 'POST', body: JSON.stringify(nutrition) });
+                currentUser.nutrition.push(newNutrition);
+            };
+
+            const updateNutrition = async (id, updates) => {
+                const updated = await apiCall(`/api/user/${sessionId}/nutrition/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
+                const index = currentUser.nutrition.findIndex(n => n.id === id);
+                currentUser.nutrition[index] = updated;
+            };
+
+            const deleteNutrition = async (id) => {
+                await apiCall(`/api/user/${sessionId}/nutrition/${id}`, { method: 'DELETE' });
+                currentUser.nutrition = currentUser.nutrition.filter(n => n.id !== id);
             };
 
             // --- UTILITY FUNCTIONS ---
@@ -395,50 +451,59 @@
             navLinks.forEach(l => l.addEventListener('click', (e) => { e.preventDefault(); showContent(e.currentTarget.getAttribute('href').substring(1)); }));
 
             // --- AUTHENTICATION ---
-            const processGoogleSignIn = (payload) => {
-                const db = getUserDB();
-                let user = db.find(u => u.username === payload.email);
-                if (user) {
-                    currentUser = user;
-                } else {
-                    const newUser = {
+            const processGoogleSignIn = async (payload) => {
+                try {
+                    // For Google signin, we need to register if not exists, but since backend handles it, perhaps login or register
+                    // For simplicity, assume we register with Google data
+                    const userData = {
                         name: payload.name,
                         username: payload.email,
-                        password: `google_auth_${Date.now()}`,
-                        age: 0, height: 0, weight: 0, goal: 0,
-                        description: "Welcome! Please complete your profile.",
-                        calorieGoal: 0, weightHistory: [], workouts: [], nutrition: [], todos: []
+                        password: `google_${Date.now()}`,
+                        age: 0,
+                        height: 0,
+                        weight: 0,
+                        goal: 0,
+                        description: "Signed in with Google"
                     };
-                    db.push(newUser);
-                    saveUserDB(db);
-                    currentUser = newUser;
+                    await register(userData);
+                    await login(payload.email, userData.password);
+                    initializeApp();
+                } catch (error) {
+                    showMessage('Google sign-in failed: ' + error.message);
                 }
-                initializeApp();
             };
             
-            const handleLogin = (e) => {
+            const handleLogin = async (e) => {
                 e.preventDefault();
-                const user = getUserDB().find(u => u.username === forms.login['username'].value);
-                if (user && user.password === forms.login['password'].value) {
-                    currentUser = user;
+                try {
+                    await login(forms.login['username'].value, forms.login['password'].value);
                     initializeApp();
-                } else {
+                } catch (error) {
                     showMessage('Invalid username or password.');
                 }
             };
-            const handleSignup = (e) => {
+            const handleSignup = async (e) => {
                 e.preventDefault();
                 const data = Object.fromEntries(new FormData(forms.signup).entries());
                 if (data.password !== data.confirmPassword) return showMessage("Passwords do not match.");
-                const db = getUserDB();
-                if (db.some(u => u.username === data.username)) return showMessage("Username already exists.");
-                db.push(createNewUser(data));
-                saveUserDB(db);
-                showMessage('Signup successful! Please log in.');
-                document.getElementById('toggle-auth').click();
-                forms.signup.reset();
+                try {
+                    await register(data);
+                    showMessage('Signup successful! Please log in.');
+                    document.getElementById('toggle-auth').click();
+                    forms.signup.reset();
+                } catch (error) {
+                    showMessage('Signup failed: ' + error.message);
+                }
             };
-            const handleLogout = () => { currentUser = null; sessionStorage.removeItem('loggedInUser'); showPage('auth'); forms.login.reset(); };
+            const handleLogout = async () => {
+                try {
+                    await logout();
+                } catch (error) {
+                    console.error('Logout error:', error);
+                }
+                showPage('auth');
+                forms.login.reset();
+            };
             document.getElementById('toggle-auth').addEventListener('click', (e) => { e.preventDefault(); const isLoginVisible = forms.login.checkVisibility(); forms.login.classList.toggle('hidden', isLoginVisible); forms.signup.classList.toggle('hidden', !isLoginVisible); document.getElementById('auth-subtitle').textContent = isLoginVisible ? 'Create an account' : 'Login to your account'; e.target.textContent = isLoginVisible ? "Already have an account? Sign in" : "Don't have an account? Sign up"; });
             passwordToggles.forEach(toggle => {
                 toggle.addEventListener('click', () => {
@@ -451,8 +516,22 @@
             });
             
             // --- APP INITIALIZATION ---
-            const initializeApp = () => { sessionStorage.setItem('loggedInUser', JSON.stringify(currentUser)); showPage('main'); showContent('dashboard'); populateUserData(); };
-            const checkSession = () => { const user = sessionStorage.getItem('loggedInUser'); if (user) { currentUser = JSON.parse(user); initializeApp(); } else { showPage('auth'); } };
+            const initializeApp = () => { showPage('main'); showContent('dashboard'); populateUserData(); };
+            const checkSession = async () => {
+                sessionId = localStorage.getItem('sessionId');
+                if (sessionId) {
+                    try {
+                        await getUser();
+                        initializeApp();
+                    } catch (error) {
+                        localStorage.removeItem('sessionId');
+                        sessionId = null;
+                        showPage('auth');
+                    }
+                } else {
+                    showPage('auth');
+                }
+            };
 
             // --- DATA POPULATION & RENDERING ---
             const populateUserData = () => {
@@ -528,28 +607,37 @@
             };
 
             const setupCrudListeners = (element, type) => {
-                element.addEventListener('click', (e) => {
+                element.addEventListener('click', async (e) => {
                     const target = e.target.closest('button, input[type="checkbox"]');
                     if (!target) return;
                     const parent = target.closest('[data-id]');
-                    const id = parseInt(parent.dataset.id);
-                    const item = currentUser[type].find(i => i.id === id);
+                    const id = parent.dataset.id;
+                    const item = currentUser[type].find(i => i.id == id);
 
                     if (target.matches('input[type="checkbox"]') && type === 'todos') {
                         item.completed = target.checked;
                         parent.classList.toggle('completed', item.completed);
+                        await updateUser({ todos: currentUser.todos });
                     } else if (target.matches('.edit-btn')) {
                         editingId = id;
                         if (type === 'todos') { modals.todoEdit.input.value = item.text; showModal(modals.todoEdit); }
                         if (type === 'workouts') { modals.workoutEdit.name.value = item.name; modals.workoutEdit.sets.value = item.sets; modals.workoutEdit.reps.value = item.reps; showModal(modals.workoutEdit); }
                         if (type === 'nutrition') { modals.nutritionEdit.name.value = item.name; modals.nutritionEdit.calories.value = item.calories; showModal(modals.nutritionEdit); }
                     } else if (target.matches('.delete-btn')) {
-                        currentUser[type] = currentUser[type].filter(i => i.id !== id);
-                        if (type === 'todos') renderTodos();
-                        if (type === 'workouts') renderWorkoutHistory();
-                        if (type === 'nutrition') renderNutritionLog();
+                        if (type === 'todos') {
+                            currentUser.todos = currentUser.todos.filter(i => i.id != id);
+                            await updateUser({ todos: currentUser.todos });
+                            renderTodos();
+                        }
+                        if (type === 'workouts') {
+                            await deleteWorkout(id);
+                            renderWorkoutHistory();
+                        }
+                        if (type === 'nutrition') {
+                            await deleteNutrition(id);
+                            renderNutritionLog();
+                        }
                     }
-                    updateUserInDB(currentUser);
                 });
             };
             setupCrudListeners(document.getElementById('todo-list'), 'todos');
@@ -557,30 +645,91 @@
             setupCrudListeners(nutritionLogTable, 'nutrition');
 
             // --- FORM SUBMISSIONS ---
-            forms.profile.addEventListener('submit', (e) => {
+            forms.profile.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const newWeight = parseFloat(document.getElementById('profile-weight').value);
                 const newGoal = parseFloat(document.getElementById('profile-goal').value);
                 const newAge = parseInt(document.getElementById('profile-age').value);
                 const newHeight = parseInt(document.getElementById('profile-height').value);
+                const updates = {
+                    age: newAge,
+                    height: newHeight,
+                    weight: newWeight,
+                    goal: newGoal,
+                    description: document.getElementById('profile-description').value,
+                    calorieGoal: calculateCalorieGoal(newWeight, newHeight, newAge, newGoal)
+                };
                 if (newWeight !== currentUser.weight) {
-                    currentUser.weightHistory.push({ date: new Date().toLocaleDateString('en-US', {month: 'short', day: 'numeric'}), weight: newWeight });
-                    if (currentUser.weightHistory.length > 30) currentUser.weightHistory.shift();
+                    updates.weightHistory = [...currentUser.weightHistory, { date: new Date().toLocaleDateString('en-US', {month: 'short', day: 'numeric'}), weight: newWeight }];
+                    if (updates.weightHistory.length > 30) updates.weightHistory.shift();
                 }
-                currentUser.age = newAge; currentUser.height = newHeight; currentUser.weight = newWeight; currentUser.goal = newGoal;
-                currentUser.description = document.getElementById('profile-description').value;
-                currentUser.calorieGoal = calculateCalorieGoal(newWeight, newHeight, newAge, newGoal);
-                updateUserInDB(currentUser);
-                sessionStorage.setItem('loggedInUser', JSON.stringify(currentUser));
+                await updateUser(updates);
                 populateUserData();
                 showMessage('Profile updated successfully!');
             });
-            forms.todo.addEventListener('submit', (e) => { e.preventDefault(); const input = document.getElementById('todo-input'); if (input.value.trim()) { currentUser.todos.push({ id: Date.now(), text: input.value.trim(), completed: false }); renderTodos(); input.value = ''; updateUserInDB(currentUser);} });
-            forms.workout.addEventListener('submit', (e) => { e.preventDefault(); currentUser.workouts.push({ id: Date.now(), date: new Date().toLocaleDateString(), name: document.getElementById('workout-name').value, sets: parseInt(document.getElementById('workout-sets').value), reps: parseInt(document.getElementById('workout-reps').value) }); renderWorkoutHistory(); forms.workout.reset(); updateUserInDB(currentUser); });
-            forms.nutrition.addEventListener('submit', (e) => { e.preventDefault(); currentUser.nutrition.push({ id: Date.now(), name: document.getElementById('food-item').value, calories: parseInt(document.getElementById('calories').value) }); renderNutritionLog(); forms.nutrition.reset(); updateUserInDB(currentUser);});
-            modals.todoEdit.saveBtn.addEventListener('click', () => { const newText = modals.todoEdit.input.value.trim(); if (newText && editingId) { currentUser.todos.find(t => t.id === editingId).text = newText; renderTodos(); hideModal(modals.todoEdit); editingId = null; updateUserInDB(currentUser); } });
-            modals.workoutEdit.saveBtn.addEventListener('click', () => { const workout = currentUser.workouts.find(w => w.id === editingId); workout.name = modals.workoutEdit.name.value; workout.sets = modals.workoutEdit.sets.value; workout.reps = modals.workoutEdit.reps.value; renderWorkoutHistory(); hideModal(modals.workoutEdit); editingId = null; updateUserInDB(currentUser);});
-            modals.nutritionEdit.saveBtn.addEventListener('click', () => { const nutrition = currentUser.nutrition.find(n => n.id === editingId); nutrition.name = modals.nutritionEdit.name.value; nutrition.calories = parseInt(modals.nutritionEdit.calories.value); renderNutritionLog(); hideModal(modals.nutritionEdit); editingId = null; updateUserInDB(currentUser);});
+            forms.todo.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const input = document.getElementById('todo-input');
+                if (input.value.trim()) {
+                    currentUser.todos.push({ id: Date.now().toString(), text: input.value.trim(), completed: false });
+                    await updateUser({ todos: currentUser.todos });
+                    renderTodos();
+                    input.value = '';
+                }
+            });
+            forms.workout.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const workout = {
+                    date: new Date().toLocaleDateString(),
+                    name: document.getElementById('workout-name').value,
+                    sets: parseInt(document.getElementById('workout-sets').value),
+                    reps: parseInt(document.getElementById('workout-reps').value)
+                };
+                await addWorkout(workout);
+                renderWorkoutHistory();
+                forms.workout.reset();
+            });
+            forms.nutrition.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const nutrition = {
+                    name: document.getElementById('food-item').value,
+                    calories: parseInt(document.getElementById('calories').value)
+                };
+                await addNutrition(nutrition);
+                renderNutritionLog();
+                forms.nutrition.reset();
+            });
+            modals.todoEdit.saveBtn.addEventListener('click', async () => {
+                const newText = modals.todoEdit.input.value.trim();
+                if (newText && editingId) {
+                    currentUser.todos.find(t => t.id == editingId).text = newText;
+                    await updateUser({ todos: currentUser.todos });
+                    renderTodos();
+                    hideModal(modals.todoEdit);
+                    editingId = null;
+                }
+            });
+            modals.workoutEdit.saveBtn.addEventListener('click', async () => {
+                const updates = {
+                    name: modals.workoutEdit.name.value,
+                    sets: modals.workoutEdit.sets.value,
+                    reps: modals.workoutEdit.reps.value
+                };
+                await updateWorkout(editingId, updates);
+                renderWorkoutHistory();
+                hideModal(modals.workoutEdit);
+                editingId = null;
+            });
+            modals.nutritionEdit.saveBtn.addEventListener('click', async () => {
+                const updates = {
+                    name: modals.nutritionEdit.name.value,
+                    calories: parseInt(modals.nutritionEdit.calories.value)
+                };
+                await updateNutrition(editingId, updates);
+                renderNutritionLog();
+                hideModal(modals.nutritionEdit);
+                editingId = null;
+            });
 
             // --- MODAL UTILITY ---
             const showModal = (modal) => { modal.el.classList.remove('hidden'); setTimeout(() => { modal.content.classList.remove('scale-95', 'opacity-0'); modal.content.classList.add('scale-100', 'opacity-100'); }, 10); };
@@ -626,5 +775,3 @@
     </script>
 </body>
 </html>
-
-
